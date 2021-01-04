@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home - Programmer101N</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+<canvas id="canvas">
+
+</canvas>
+
+</body>
+
+<script src="assets/js/jquery.min.js"></script>
+<script src="assets/js/anime.js"></script>
+<script>
+    const canvas = document.getElementById("canvas");
+    const c = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const nParticles = 20;
+    let colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C'];
+    let circleColors = ['#91133c', '#27a969', '#224bbf', '#888220'];
+    let i = 0;
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    function getEndPos(p) {
+        let angle = anime.random(0, 360) * Math.PI / 180;
+        let radius = [-1, 1][anime.random(0, 1)] * anime.random(50, 180);
+        return {
+            x: p.x + radius * Math.cos(angle),
+            y: p.y + radius * Math.sin(angle),
+        }
+    }
+
+    function getParticle(x, y){
+        const p = {
+            x: x,
+            y: y,
+            radius: anime.random(18, 32),
+            color: colors[anime.random(0, colors.length-1)],
+            draw: () => {
+                c.beginPath();
+                c.arc(p.x, p.y, p.radius, 0, Math.PI * 2, true);
+                c.fillStyle = p.color;
+                c.fill();
+            }
+        }
+
+        p.endPos = getEndPos(p);
+        return p;
+    }
+
+    function explosion(x, y){
+        const animatable = [];
+
+        for(let i = 0 ; i < nParticles; i++){
+            animatable.push(getParticle(x, y));
+        }
+
+        const circle = {
+            x: x,
+            y: y,
+            radius: 0,
+            color: circleColors[i++],
+            draw: () => {
+                c.beginPath();
+                c.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2, true);
+                c.fillStyle = circle.color;
+                c.fill();
+            }
+        }
+
+        if (i >= circleColors.length){
+            i = 0;
+        }
+
+        anime({
+            targets: circle,
+            radius: window.innerWidth * 1.125,
+            complete: () => {
+                document.body.style.background = circle.color;
+            },
+            update: (e) => {
+                e.animatables.forEach((a) => {
+                    a.target.draw();
+                });
+            },
+            duration: 3000,
+            easing: 'easeOutExpo',
+        });
+
+        anime({
+            targets: animatable,
+            radius: 0.1,
+            x: (p) => p.endPos.x,
+            y: (p) => p.endPos.y,
+            update: (e) => {
+                e.animatables.forEach((a) => {
+                    a.target.draw();
+                });
+            },
+            duration: 2000,
+            easing: 'easeOutExpo'
+        });
+
+    }
+
+    const render = anime({
+        duration: Infinity,
+        update: () => {
+            c.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    });
+
+    document.addEventListener(('ontouchstart' in window || navigator.msMaxTouchPoints) ? 'touchstart' : 'mousedown', (e) => {
+        render.play();
+        explosion(e.clientX, e.clientY);
+    });
+
+</script>
+
+</html>
